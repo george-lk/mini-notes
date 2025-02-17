@@ -11,6 +11,7 @@ local TEMP_FILE_DESC_INFO = 'saving_desc_out_file.txt'
 local PYTHON_FILE_ADD_BLANK_NOTE = 'add_new_blank_note_to_db.py'
 local PYTHON_FILE_GET_ALL_NOTES = 'get_all_notes.py'
 local PYTHON_FILE_UPDATE_NOTE = 'update_note_desc_to_db.py'
+local PYTHON_FILE_CHECK_DB = 'check_db_table.py'
 local DATA_DB_FILENAME = 'notes.db'
 
 local function custom_save_output_file (output_file_path, save_buf)
@@ -84,6 +85,20 @@ end
 
 local function custom_trim(string_input)
     return (string_input:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+
+local function check_db_table_exists ()
+    local job_check_db_table = vim.fn.jobstart(
+	' ' .. PYTHON_MAIN_CMD .. ' ./' .. PYTHON_FILE_CHECK_DB .. ' --db_path ' .. DATA_DIR_PATH .. DATA_DB_FILENAME,
+	{
+	    stdout_buffered = true,
+	    cwd = PYTHON_PATH_SCRIPT,
+	    --on_stdout = function (chanid, data, name)
+	    --end,
+	}
+    )
+    vim.fn.jobwait({job_check_db_table}, -1)
 end
 
 
@@ -268,6 +283,7 @@ function class_func.show(user_settings)
 	false
     )
 
+    check_db_table_exists()
     read_all_dev_notes(status_bar_win,main_note_list_win)
 
     vim.api.nvim_create_autocmd("CursorMoved",
