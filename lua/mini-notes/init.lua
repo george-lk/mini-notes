@@ -292,6 +292,10 @@ function class_func.show(user_settings)
 	    local row, col = unpack(vim.api.nvim_win_get_cursor(0))
 	    local current_buf_line_str = vim.api.nvim_buf_get_lines(main_note_list_win.bufnr, row-1, row, false)
 
+	    if current_buf_line_str[1] == '' then
+		return
+	    end
+
 	    local note_id = -1
 	    local note_title = {}
 	    search_result = custom_split_string(current_buf_line_str[1], '|')
