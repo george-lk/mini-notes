@@ -359,7 +359,7 @@ function class_func.show(user_settings)
 
     local buf_cmd_close_window = '<Cmd>lua vim.api.nvim_set_current_win(' .. user_curr_focused_win .. '); <CR>'
     for _, value in ipairs(all_floating_window_id) do
-	vim.api.nvim_buf_set_keymap(value.bufnr, 'n', '<Esc>', buf_cmd_close_window, {noremap = true, silent = true})
+	vim.api.nvim_buf_set_keymap(value.bufnr, 'n', user_settings.exit_note_window, buf_cmd_close_window, {noremap = true, silent = true})
     end
 
     local float_window_augroup = vim.api.nvim_create_augroup("custom_floating_window", {clear = true})
