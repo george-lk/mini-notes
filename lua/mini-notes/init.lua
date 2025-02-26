@@ -23,9 +23,15 @@ local function custom_save_output_file (output_file_path, save_buf)
 end
 
 
-local function custom_split_string (string_val, sep)
+local function custom_split_string (string_val, sep, optional_sep)
     local result_list = {}
-    for str in string.gmatch(string_val, "([^"..sep.."]+)") do
+    local regex_pattern = "([^"..sep.."]+)"
+
+    if optional_sep == true then
+	regex_pattern = "([^".. sep .."]*)".. sep .."?"
+    end
+
+    for str in string.gmatch(string_val, regex_pattern ) do
 	table.insert(result_list, str)
     end
     return result_list
@@ -109,13 +115,12 @@ local function read_all_dev_notes (status_bar_win, main_note_list_win)
 	    stdout_buffered = true,
 	    cwd = PYTHON_PATH_SCRIPT,
 	    on_stdout = function (chanid, data, name)
-		local arr_data = {}
+		local arr_data = {data[1]}
 
-		for _, values in ipairs(data) do
-		    --local str = string.gsub(values, "[^%S\n]+", "")
-		    local str = string.gsub(values, "[\n]+", "")
-		    table.insert(arr_data, str)
-		end
+		--for _, values in ipairs(data) do
+		    --local str = string.gsub(values, "[\n]+", "")
+		    --table.insert(arr_data, str)
+		--end
 
 		ALL_NOTES_DATA = vim.fn.json_decode(arr_data[1])
 
@@ -166,7 +171,7 @@ local function dev_custom_save_desc_notes (desc_win_id, note_list_win_id, note_t
     local row, col = unpack(vim.api.nvim_win_get_cursor(note_list_win_id.winnr))
     local notes_buf_line_str = vim.api.nvim_buf_get_lines(note_list_win_id.bufnr, row - 1, row, false)
     local note_id = -1
-    local custom_search_result = custom_split_string(notes_buf_line_str[1], '|')
+    local custom_search_result = custom_split_string(notes_buf_line_str[1], '|', false)
     note_id = tonumber(search_result[1])
 
     local output_file_path = DATA_DIR_PATH .. TEMP_FILE_DESC_INFO
@@ -298,13 +303,13 @@ function class_func.show(user_settings)
 
 	    local note_id = -1
 	    local note_title = {}
-	    search_result = custom_split_string(current_buf_line_str[1], '|')
+	    search_result = custom_split_string(current_buf_line_str[1], '|', false)
 	    note_id = tonumber(search_result[1])
 	    note_title = {custom_trim(search_result[2])}
 	    local note_snippet = {}
 	    for _, values in ipairs(ALL_NOTES_DATA.data) do
 		if values.Id == note_id then
-		    note_snippet = custom_split_string(values.Description, '\n')
+		    note_snippet = custom_split_string(values.Description, '\n', true)
 		    break
 		end
 	    end
