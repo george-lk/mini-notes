@@ -94,6 +94,16 @@ local function custom_trim(string_input)
 end
 
 
+local function update_main_note_list(main_note_list_win)
+    local data_list = {}
+    for _, values in ipairs(ALL_NOTES_DATA.data) do
+	table.insert(data_list, values.Id .. "| " .. values.Title)
+    end
+
+    vim.api.nvim_buf_set_lines(main_note_list_win.bufnr, 0, -1, false, data_list)
+end
+
+
 local function check_db_table_exists ()
     local job_check_db_table = vim.fn.jobstart(
 	' ' .. PYTHON_MAIN_CMD .. ' ./' .. PYTHON_FILE_CHECK_DB .. ' --db_path ' .. DATA_DIR_PATH .. DATA_DB_FILENAME,
@@ -124,13 +134,7 @@ local function read_all_dev_notes (status_bar_win, main_note_list_win)
 
 		ALL_NOTES_DATA = vim.fn.json_decode(arr_data[1])
 
-		local data_list = {}
-		for _, values in ipairs(ALL_NOTES_DATA.data) do
-		    table.insert(data_list, values.Id .. "| " .. values.Title)
-		end
-
-		vim.api.nvim_buf_set_lines(main_note_list_win.bufnr, 0, -1, false, data_list)
-
+		update_main_note_list(main_note_list_win)
 		local time_epoch = os.time()
 		local time_format = os.date('%Y-%m-%d %H:%M:%S')
 		local status_msg_str = '[Notes Read] - ' .. time_format
