@@ -1,5 +1,6 @@
 local class_func = {}
 local ALL_NOTES_DATA = {}
+local FILTER_NOTE_TITLE_STRING = ""
 
 local OS_FILE_SEP = package.config:sub(1, 1)
 local PYTHON_PATH_SCRIPT = string.sub(debug.getinfo(1).source, 2, string.len('/lua/mini-notes/init.lua') * -1 ) .. 'scripts' .. OS_FILE_SEP
@@ -94,10 +95,24 @@ local function custom_trim(string_input)
 end
 
 
-local function update_main_note_list(main_note_list_win)
+local function is_substring_found_in_string (main_string, sub_string)
+    for match_str in string.gmatch(main_string, sub_string) do
+	return true
+    end
+    return false
+end
+
+
+local function update_main_note_list(main_note_list_win, filter_string)
     local data_list = {}
     for _, values in ipairs(ALL_NOTES_DATA.data) do
-	table.insert(data_list, values.Id .. "| " .. values.Title)
+	if filter_string then
+	    if is_substring_found_in_string(values.Title, filter_string) then
+		table.insert(data_list, values.Id .. "| " .. values.Title)
+	    end
+	else
+	    table.insert(data_list, values.Id .. "| " .. values.Title)
+	end
     end
 
     vim.api.nvim_buf_set_lines(main_note_list_win.bufnr, 0, -1, false, data_list)
@@ -118,7 +133,7 @@ local function check_db_table_exists ()
 end
 
 
-local function read_all_dev_notes (status_bar_win, main_note_list_win)
+local function read_all_dev_notes (status_bar_win, main_note_list_win, filter_string)
     local job_read_all_notes = vim.fn.jobstart(
 	' ' .. PYTHON_MAIN_CMD .. ' ./' .. PYTHON_FILE_GET_ALL_NOTES .. ' --db_path ' .. DATA_DIR_PATH .. DATA_DB_FILENAME,
 	{
@@ -134,7 +149,7 @@ local function read_all_dev_notes (status_bar_win, main_note_list_win)
 
 		ALL_NOTES_DATA = vim.fn.json_decode(arr_data[1])
 
-		update_main_note_list(main_note_list_win)
+		update_main_note_list(main_note_list_win, filter_string)
 		local time_epoch = os.time()
 		local time_format = os.date('%Y-%m-%d %H:%M:%S')
 		local status_msg_str = '[Notes Read] - ' .. time_format
@@ -293,7 +308,7 @@ function class_func.show(user_settings)
     )
 
     check_db_table_exists()
-    read_all_dev_notes(status_bar_win,main_note_list_win)
+    read_all_dev_notes(status_bar_win, main_note_list_win)
 
     vim.api.nvim_create_autocmd("CursorMoved",
     {
@@ -334,6 +349,11 @@ function class_func.show(user_settings)
     vim.keymap.set('n', user_settings.focus_main_list,
 	function ()
 	    vim.api.nvim_set_current_win(main_note_list_win.winnr);
+	end
+    )
+    vim.keymap.set('n', user_settings.focus_filter_note,
+	function ()
+	    vim.api.nvim_set_current_win(search_filter_win.winnr);
 	end
     )
     vim.keymap.set('n', user_settings.focus_title,
@@ -383,6 +403,18 @@ function class_func.show(user_settings)
 		    close_all_floating_window(all_floating_window_id)
 		end
 	    end
+	}
+    )
+    local autocmd_id_text_changed_insert_filter_win = vim.api.nvim_create_autocmd(
+	"TextChangedI",
+	{
+	    group = float_window_augroup,
+	    callback = function ()
+		local filter_current_string = vim.api.nvim_buf_get_lines(search_filter_win.bufnr, 0, -1, false)
+		FILTER_NOTE_TITLE_STRING = filter_current_string[1]
+		update_main_note_list(main_note_list_win, FILTER_NOTE_TITLE_STRING)
+	    end,
+	    buffer = search_filter_win.bufnr
 	}
     )
 end
