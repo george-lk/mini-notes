@@ -95,8 +95,19 @@ local function custom_trim(string_input)
 end
 
 
-local function is_substring_found_in_string (main_string, sub_string)
-    for match_str in string.gmatch(main_string, sub_string) do
+local function is_substring_found_in_string (main_string, sub_string, case_sensitive)
+    local m_string
+    local s_string
+
+    if case_sensitive then
+	m_string = main_string
+	s_string = sub_string
+    else
+	m_string = string.lower(main_string)
+	s_string = string.lower(sub_string)
+    end
+
+    for match_str in string.gmatch(m_string, s_string) do
 	return true
     end
     return false
@@ -107,7 +118,7 @@ local function update_main_note_list(main_note_list_win, filter_string)
     local data_list = {}
     for _, values in ipairs(ALL_NOTES_DATA.data) do
 	if filter_string then
-	    if is_substring_found_in_string(values.Title, filter_string) then
+	    if is_substring_found_in_string(values.Title, filter_string, false) then
 		table.insert(data_list, values.Id .. "| " .. values.Title)
 	    end
 	else
@@ -406,7 +417,7 @@ function class_func.show(user_settings)
 	}
     )
     local autocmd_id_text_changed_insert_filter_win = vim.api.nvim_create_autocmd(
-	"TextChangedI",
+	{"TextChangedI", "TextChanged"},
 	{
 	    group = float_window_augroup,
 	    callback = function ()
