@@ -73,7 +73,7 @@ end
 local function remove_autocmd_group (augroup_id)
     vim.api.nvim_clear_autocmds (
 	{
-	    event = "BufEnter",
+	    --event = "BufEnter",
 	    group = augroup_id,
 	}
     )
@@ -321,35 +321,6 @@ function class_func.show(user_settings)
     check_db_table_exists()
     read_all_dev_notes(status_bar_win, main_note_list_win)
 
-    vim.api.nvim_create_autocmd("CursorMoved",
-    {
-	callback = function()
-	    local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	    local current_buf_line_str = vim.api.nvim_buf_get_lines(main_note_list_win.bufnr, row-1, row, false)
-
-	    if current_buf_line_str[1] == '' then
-		return
-	    end
-
-	    local note_id = -1
-	    local note_title = {}
-	    search_result = custom_split_string(current_buf_line_str[1], '|', false)
-	    note_id = tonumber(search_result[1])
-	    note_title = {custom_trim(search_result[2])}
-	    local note_snippet = {}
-	    for _, values in ipairs(ALL_NOTES_DATA.data) do
-		if values.Id == note_id then
-		    note_snippet = custom_split_string(values.Description, '\n', true)
-		    break
-		end
-	    end
-
-	    vim.api.nvim_buf_set_lines(note_desc_win.bufnr, 0, -1, false, note_snippet )
-	    vim.api.nvim_buf_set_lines(note_title_info_win.bufnr, 0, -1, false, note_title )
-	end,
-	buffer = main_note_list_win.bufnr
-    })
-
     local all_floating_window_id = {}
     table.insert(all_floating_window_id, main_note_list_win)
     table.insert(all_floating_window_id, note_desc_win)
@@ -403,6 +374,37 @@ function class_func.show(user_settings)
     end
 
     local float_window_augroup = vim.api.nvim_create_augroup("custom_floating_window", {clear = true})
+    local autocmd_id_cursor_moved_main_note_list = vim.api.nvim_create_autocmd(
+	"CursorMoved",
+	{
+	    group = float_window_augroup,
+	    callback = function()
+		local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+		local current_buf_line_str = vim.api.nvim_buf_get_lines(main_note_list_win.bufnr, row-1, row, false)
+
+		if current_buf_line_str[1] == '' then
+		    return
+		end
+
+		local note_id = -1
+		local note_title = {}
+		search_result = custom_split_string(current_buf_line_str[1], '|', false)
+		note_id = tonumber(search_result[1])
+		note_title = {custom_trim(search_result[2])}
+		local note_snippet = {}
+		for _, values in ipairs(ALL_NOTES_DATA.data) do
+		    if values.Id == note_id then
+			note_snippet = custom_split_string(values.Description, '\n', true)
+			break
+		    end
+		end
+
+		vim.api.nvim_buf_set_lines(note_desc_win.bufnr, 0, -1, false, note_snippet )
+		vim.api.nvim_buf_set_lines(note_title_info_win.bufnr, 0, -1, false, note_title )
+	    end,
+	    buffer = main_note_list_win.bufnr
+	}
+    )
     local autocmd_id_enter_buf = vim.api.nvim_create_autocmd(
 	"BufEnter",
 	{
